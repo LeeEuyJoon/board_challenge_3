@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Post Detail</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Home</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <span class="navbar-text mr-3">Hello, <span th:text="${session.loginUser.nickname}"></span>!</span>
+            </li>
+            <!-- 추가된 MyPage 버튼 -->
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <a class="nav-link btn btn-outline-info mr-3" href="/user/myPage">MyPage</a>
+            </li>
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <form action="/user/logout" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-outline-secondary nav-link">Logout</button>
+                </form>
+            </li>
+            <li class="nav-item" th:if="${session.loginUser == null}">
+                <a class="nav-link btn btn-outline-primary" href="/user/loginForm">Login</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h1 id="post-title" class="mb-4">[[${post.title}]]</h1>
+    <input type="text" id="edit-title" class="form-control mb-3" style="display:none;" value="[[${post.title}]]">
+
+    <p><strong>작성자:</strong> [[${post.writer.nickname}]]</p>
+    <p><strong>조회수:</strong> [[${post.viewCnt}]]</p>
+
+    <div id="post-content" class="border p-4 mb-4" style="min-height: 200px;">[[${post.content}]]</div>
+    <textarea id="edit-content" class="form-control mb-3" style="display:none;" rows="5">[[${post.content}]]</textarea>
+
+    <!-- Edit and Delete buttons only if the logged-in user is the writer -->
+    <div th:if="${session.loginUser != null and session.loginUser.id == post.writer.id}">
+        <button id="edit-button" class="btn btn-warning">Edit</button>
+        <button id="save-button" class="btn btn-success" style="display:none;">Save Changes</button>
+        <button id="delete-button" class="btn btn-danger">Delete</button>
+    </div>
+
+    <hr>
+    <h3>댓글</h3>
+    <div id="comments-section">
+        <!-- Loop through comments -->
+        <div th:each="comment : ${comments}">
+            <p th:if="${comment.user != null}"><strong>[[${comment.user.nickname}]]:</strong> [[${comment.content}]]</p>
+            <p th:if="${comment.user == null}"><strong>Unknown User:</strong> [[${comment.content}]]</p>
+            <!-- 댓글 작성자와 로그인된 유저가 같을 때만 수정/삭제 버튼 표시 -->
+            <div th:if="${session.loginUser != null and session.loginUser.id == comment.user?.id}">
+                <button class="btn btn-sm btn-warning edit-comment-button" th:data-comment-id="${comment.id}">Edit</button>
+                <button class="btn btn-sm btn-danger delete-comment-button" th:data-comment-id="${comment.id}">Delete</button>
+            </div>
+            <hr>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="new-comment"></label>
+        <textarea id="new-comment" class="form-control" rows="3"></textarea>
+        <button id="add-comment-button" class="btn btn-primary mt-2">Add Comment</button>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        const postId = [[${post.id}]];
+        const isLoggedIn = [[${session.loginUser != null}]];
+
+        $('#edit-button').click(function () {
+            // Hide display fields and show input fields
+            $('#post-title, #post-content').hide();
+            $('#edit-title, #edit-content').show();
+
+            // Show Save button and hide Edit button
+            $('#edit-button').hide();
+            $('#save-button').show();
+        });
+
+        $('#save-button').click(function () {
+            const updatedTitle = $('#edit-title').val();
+            const updatedContent = $('#edit-content').val();
+            const postId = [[${post.id}]];
+
+            $.ajax({
+                url: '/board/editPost',
+                type: 'POST',
+                data: {
+                    postId: postId,
+                    title: updatedTitle,
+                    content: updatedContent
+                },
+                success: function () {
+                    alert('글 수정이 완료되었습니다.');
+                    window.location.href = '/board/post?postId=' + postId;
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('Failed to update post. Please try again.');
+                }
+            });
+        });
+
+        $('#delete-button').click(function () {
+            if (confirm('정말로 게시글을 삭제하시겠습니까?')) {
+                $.ajax({
+                    url: '/board/deletePost',
+                    type: 'POST',
+                    data: { postId: postId },
+                    success: function () {
+                        window.location.href = '/board/list';
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('Failed to delete post. Please try again.');
+                    }
+                });
+            }
+        });
+
+        $('#add-comment-button').click(function () {
+            // 로그인 체크
+            if (!isLoggedIn) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/user/loginForm';  // 로그인 페이지로 리다이렉트
+                return;
+            }
+
+            const newComment = $('#new-comment').val();
+            if (newComment.trim() === '') {
+                alert('Comment cannot be empty.');
+                return;
+            }
+
+            $.ajax({
+                url: '/comment/add',
+                type: 'POST',
+                data: {
+                    postId: postId,
+                    content: newComment
+                },
+                success: function () {
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('Failed to add comment. Please try again.');
+                }
+            });
+        });
+
+        $('.edit-comment-button').click(function () {
+            const commentId = $(this).data('comment-id');
+            const originalContent = $(this).closest('div').find('p').text(); // 댓글 내용 가져오기
+            const newContent = prompt('Edit your comment:', originalContent);
+
+            if (newContent !== null && newContent.trim() !== '') {
+                $.ajax({
+                    url: '/comment/update',
+                    type: 'PUT',
+                    data: {
+                        commentId: commentId,
+                        content: newContent
+                    },
+                    success: function (response) {
+                        alert('댓글이 수정되었습니다.');
+                        location.reload(); // 페이지 새로고침
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert(xhr.responseText || '댓글 수정에 실패했습니다. 다시 시도해주세요.');
+                    }
+                });
+            } else {
+                alert('댓글 내용을 입력해주세요.');
+            }
+        });
+
+        $('.delete-comment-button').click(function () {
+            const commentId = $(this).data('comment-id');
+            const postId = [[${post.id}]]; // 게시글 ID 가져오기
+
+            if (confirm('댓글을 삭제하시겠습니까?')) {
+                $.ajax({
+                    url: '/comment/delete',
+                    type: 'DELETE',
+                    data: { postId: postId, commentId: commentId },
+                    success: function (response) {
+                        alert(response); // 삭제 성공 메시지 출력
+                        location.reload(); // 페이지 새로고침
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert(xhr.responseText || 'Failed to delete comment. Please try again.');
+                    }
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

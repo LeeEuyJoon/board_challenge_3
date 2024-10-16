@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>게시판 목록</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Home</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <span class="navbar-text mr-3">Hello, <span th:text="${session.loginUser.nickname}"></span>!</span>
+            </li>
+            <!-- 추가된 MyPage 버튼 -->
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <a class="nav-link btn btn-outline-info mr-3" href="/user/myPage">MyPage</a>
+            </li>
+            <li class="nav-item" th:if="${session.loginUser != null}">
+                <form action="/user/logout" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-outline-secondary nav-link">Logout</button>
+                </form>
+            </li>
+            <li class="nav-item" th:if="${session.loginUser == null}">
+                <a class="nav-link btn btn-outline-primary" href="/user/loginForm">Login</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">JPA 게시판 연습 화이팅</h1>
+
+    <!-- 글 쓰기 버튼 (로그인 여부에 따라 표시) -->
+    <div class="text-right mb-3">
+        <button id="write-post-btn" class="btn btn-primary" th:if="${session.loginUser != null}">글 쓰기</button>
+        <button id="login-alert-btn" class="btn btn-primary" th:if="${session.loginUser == null}">글 쓰기</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">제목</th>
+                <th scope="col">작성자</th>
+                <th scope="col">등록일</th>
+                <th scope="col">조회수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="post, iterStat : ${posts}">
+                <td th:text="${(ph.pageSize * (ph.page - 1)) + iterStat.index + 1}"></td>
+                <td><a th:href="@{'/board/post?postId=' + ${post.id}}" th:text="${post.title}"></a></td>
+                <td th:text="${post.writer.nickname}"></td>
+                <td th:text="${#temporals.format(post.regDate, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${post.viewCnt}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Flash 메시지가 있는 경우 alert로 표시 -->
+    <div th:if="${msg}" class="d-none" id="flash-message" th:text="${msg}"></div>
+
+    <nav aria-label="Page navigation" th:if="${ph != null}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${!ph.showPrev} ? 'disabled'">
+                <a class="page-link" th:href="@{'/board/list?page=' + ${ph.beginPage - 1} + '&pageSize=' + ${ph.pageSize}}" aria-label="Previous" th:if="${ph.showPrev}">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(ph.beginPage, ph.endPage)}" th:classappend="${i == ph.page} ? 'active'">
+                <a class="page-link" th:href="@{'/board/list?page=' + ${i} + '&pageSize=' + ${ph.pageSize}}" th:text="${i}"></a>
+            </li>
+            <li class="page-item" th:classappend="${!ph.showNext} ? 'disabled'">
+                <a class="page-link" th:href="@{'/board/list?page=' + ${ph.endPage + 1} + '&pageSize=' + ${ph.pageSize}}" aria-label="Next" th:if="${ph.showNext}">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Flash 메시지가 있으면 alert로 표시
+        var flashMessage = $('#flash-message').text();
+        if (flashMessage) {
+            alert(flashMessage);
+        }
+
+        // 글 쓰기 버튼 클릭 시 로그인 여부 확인
+        $('#write-post-btn').click(function () {
+            window.location.href = '/board/addPost'; // 로그인 상태에서 글 쓰기 페이지로 이동
+        });
+
+        $('#login-alert-btn').click(function () {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/user/loginForm'; // 로그인 페이지로 이동
+        });
+    });
+</script>
+</body>
+</html>

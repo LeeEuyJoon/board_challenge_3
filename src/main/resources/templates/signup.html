@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Sign Up</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Sign Up</h1>
+    <form id="signup-form" method="post" action="/user/signup">
+        <div class="form-group">
+            <label for="id">ID</label>
+            <div class="input-group">
+                <input type="text" id="id" name="id" class="form-control" required>
+                <div class="input-group-append">
+                    <button type="button" id="check-id-button" class="btn btn-outline-secondary">Check ID</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="pwd">Password</label>
+            <input type="password" id="pwd" name="pwd" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="nickname">Nickname</label>
+            <div class="input-group">
+                <input type="text" id="nickname" name="nickname" class="form-control" required>
+                <div class="input-group-append">
+                    <button type="button" id="check-nickname-button" class="btn btn-outline-secondary">Check Nickname</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="street">Street</label>
+            <input type="text" id="street" name="street" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="zipcode">Zipcode</label>
+            <input type="text" id="zipcode" name="zipcode" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Sign Up</button>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // ID 중복 체크 버튼 클릭 시
+        $('#check-id-button').click(function () {
+            const userId = $('#id').val();
+            if (userId.trim() === '') {
+                alert('ID를 입력해주세요.');
+                return;
+            }
+
+            $.ajax({
+                url: '/user/idCheck',
+                type: 'GET',
+                data: { id: userId },
+                success: function (response) {
+                    if (response) {
+                        alert('이미 사용중인 ID 입니다.');
+                    } else {
+                        alert('사용 가능한 ID입니다.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('ID 중복확인에 실패했습니다. 다시 시도해주세요.');
+                }
+            });
+        });
+
+        // 닉네임 중복 체크 버튼 클릭 시
+        $('#check-nickname-button').click(function () {
+            const nickname = $('#nickname').val();
+            if (nickname.trim() === '') {
+                alert('닉네임을 입력해주세요.');
+                return;
+            }
+
+            $.ajax({
+                url: '/user/nickCheck',
+                type: 'GET',
+                data: { nickname: nickname },
+                success: function (response) {
+                    if (response) {
+                        alert('이미 사용중인 닉네임입니다');
+                    } else {
+                        alert('사용 가능한 닉네임입니다.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('닉네임 중복확인에 실패했습니다. 다시 시도해주세요.');
+                }
+            });
+        });
+
+        // 회원가입 폼 제출 시
+        $('#signup-form').submit(function (event) {
+            event.preventDefault();
+
+            const formData = {
+                id: $('#id').val(),
+                pwd: $('#pwd').val(),
+                nickname: $('#nickname').val(),
+                city: $('#city').val(),
+                street: $('#street').val(),
+                zipcode: $('#zipcode').val()
+            };
+
+            $.ajax({
+                url: '/user/signup',
+                type: 'POST',
+                data: formData,
+                success: function () {
+                    alert('회원 가입이 완료되었습니다. 로그인하고 이용해주세요');
+                    window.location.href = '/user/loginForm';
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('회원 가입에 실패했습니다. 다시 시도해주세요.');
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

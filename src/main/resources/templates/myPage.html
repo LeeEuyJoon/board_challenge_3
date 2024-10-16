@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <title>My Page</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="/">Home</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <span class="navbar-text mr-3">Hello, <span th:text="${session.loginUser.nickname}"></span>!</span>
+      </li>
+      <li class="nav-item">
+        <form action="/user/logout" method="post" style="display:inline;">
+          <button type="submit" class="btn btn-outline-secondary nav-link">Logout</button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">My Page</h1>
+
+  <!-- 닉네임 및 주소 수정 폼 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>Profile</h3>
+    </div>
+    <div class="card-body">
+      <form action="/user/updateProfile" method="post">
+        <div class="form-group">
+          <label for="nickname">Nickname</label>
+          <input type="text" class="form-control" id="nickname" name="nickname" th:value="${session.loginUser.nickname}">
+        </div>
+
+        <!-- Address 관련 폼 (city, street, zipcode) -->
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" class="form-control" id="city" name="city" th:value="${session.loginUser.address.city}">
+        </div>
+        <div class="form-group">
+          <label for="street">Street</label>
+          <input type="text" class="form-control" id="street" name="street" th:value="${session.loginUser.address.street}">
+        </div>
+        <div class="form-group">
+          <label for="zipcode">Zipcode</label>
+          <input type="text" class="form-control" id="zipcode" name="zipcode" th:value="${session.loginUser.address.zipcode}">
+        </div>
+
+<!--        <button type="submit" class="btn btn-primary">Update</button>-->
+      </form>
+    </div>
+  </div>
+
+  <!-- 내 게시글 목록 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>My Posts</h3>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="thead-light">
+          <tr>
+            <th scope="col">번호</th>
+            <th scope="col">제목</th>
+            <th scope="col">등록일</th>
+            <th scope="col">조회수</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="post, iterStat : ${posts}">
+            <td th:text="${iterStat.index + 1}"></td>
+            <td><a th:href="@{'/board/post?postId=' + ${post.id}}" th:text="${post.title}"></a></td>
+            <td th:text="${#temporals.format(post.regDate, 'yyyy-MM-dd HH:mm')}"></td>
+            <td th:text="${post.viewCnt}"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 댓글 목록 -->
+  <!-- 내 댓글 목록 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>My Comments</h3>
+    </div>
+    <div class="card-body">
+      <div class="list-group">
+        <div th:each="comment : ${comments}" class="list-group-item">
+          <p th:text="${comment.content}"></p>
+          <small th:text="${#temporals.format(comment.regDate, 'yyyy-MM-dd HH:mm')}"></small>
+
+          <!-- 댓글이 달린 게시물 정보 표시 -->
+          <div th:if="${comment.post != null}">
+            <a th:href="@{'/board/post?postId=' + ${comment.post.id}}" th:text="'게시물: ' + ${comment.post.title}">Go to Post</a>
+          </div>
+
+          <!-- 댓글이 달린 게시물이 없을 경우 안내문 표시 -->
+          <div th:if="${comment.post == null}">
+            <span>게시물이 삭제되었습니다.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
